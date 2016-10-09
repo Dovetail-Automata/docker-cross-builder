@@ -1,0 +1,132 @@
+Add `{dh_shlibdeps,dpkg-shlibdeps} --sysroot` arguments
+
+--- /usr/bin/dpkg-shlibdeps.orig	2016-10-11 15:16:52.885634579 -0500
++++ /usr/bin/dpkg-shlibdeps	2016-10-11 16:34:34.934504495 -0500
+@@ -64,12 +64,14 @@
+ my $dependencyfield = 'Depends';
+ my $varlistfile = 'debian/substvars';
+ my $varnameprefix = 'shlibs';
++my $sysroot = '';
+ my $ignore_missing_info = 0;
+ my $warnings = 3;
+ my $debug = 0;
+ my @exclude = ();
+ my @pkg_dir_to_search = ();
+ my $host_arch = get_host_arch();
++my %system_libs = ();
+ 
+ my (@pkg_shlibs, @pkg_symbols, @pkg_root_dirs);
+ if (-d 'debian') {
+@@ -101,10 +103,8 @@
+ 	version(); exit(0);
+     } elsif (m/^--admindir=(.*)$/) {
+ 	$admindir = $1;
+-	if (not -d $admindir) {
+-	    error(_g("administrative directory '%s' does not exist"), $admindir);
+-	}
+-	$ENV{DPKG_ADMINDIR} = $admindir;
++    } elsif (m/^--sysroot=(.*?)\/?$/) {
++	$sysroot = $1;
+     } elsif (m/^-d(.*)$/) {
+ 	$dependencyfield = field_capitalize($1);
+ 	if (not defined $depstrength{$dependencyfield}) {
+@@ -144,6 +144,13 @@
+ }
+ usageerr(_g('need at least one executable')) unless scalar keys %exec;
+ 
++# Patch $admindir with $sysroot
++$admindir = $sysroot . $admindir;
++error(_g("administrative directory '%s' does not exist"), $admindir)
++    if (not -d $admindir);
++$ENV{DPKG_ADMINDIR} = $admindir;
++print ">> Using admindir $admindir\n" if $debug;
++
+ my $control = Dpkg::Control::Info->new();
+ my $fields = $control->get_source();
+ my $bd_value = deps_concat($fields->{'Build-Depends'}, $fields->{'Build-Depends-Arch'});
+@@ -261,7 +268,8 @@
+ 	    } else {
+ 		# No symbol file found, fall back to standard shlibs
+                 print "Using shlibs+objdump for $soname (file $lib)\n" if $debug;
+-                $objdump_cache{$lib} //= Dpkg::Shlibs::Objdump::Object->new($lib);
++                $objdump_cache{$lib} //= Dpkg::Shlibs::Objdump::Object->new(
++		    (exists $system_libs{$lib} ? $sysroot : "") . $lib);
+                 my $libobj = $objdump_cache{$lib};
+                 my $id = $dumplibs_wo_symfile->add_object($libobj);
+ 		if (($id ne $soname) and ($id ne $lib)) {
+@@ -573,6 +581,8 @@
+   --ignore-missing-info    don't fail if dependency information can't be found.
+   --warnings=<value>       define set of active warnings (see manual page).
+   --admindir=<directory>   change the administrative directory.
++  --sysroot=<directory>    add a prefix to the administrative and library search
++                           directories.
+   -?, --help               show this help message.
+       --version            show the version.")
+     . "\n\n" . _g(
+@@ -814,8 +824,12 @@
+ 
+     # Fallback in the root directory if we have not found what we were
+     # looking for in the packages
+-    $file = find_library($lib, \@RPATH, $format, '');
+-    return $file if defined($file);
++    $file = find_library($lib, \@RPATH, $format, $sysroot);
++    if (defined($file)) {
++	$file =~ s/^$sysroot//;
++	$system_libs{$file} = 1;  # system lib
++	return $file;
++    }
+ 
+     return;
+ }
+@@ -845,7 +859,7 @@
+ 	open STDERR, '>', '/dev/null'
+ 	    or syserr(_g('cannot open file %s'), '/dev/null');
+ 	$ENV{LC_ALL} = 'C';
+-	exec('dpkg', '--search', '--', @files)
++	exec('dpkg', '--search', "--admindir=$admindir", '--', @files)
+ 	    or syserr(_g('unable to execute %s'), 'dpkg');
+     }
+     while (<$dpkg_fh>) {
+--- /usr/bin/dh_shlibdeps.orig	2016-10-11 16:19:27.192031823 -0500
++++ /usr/bin/dh_shlibdeps	2016-10-11 16:35:22.206839629 -0500
+@@ -12,7 +12,7 @@
+ 
+ =head1 SYNOPSIS
+ 
+-B<dh_shlibdeps> [S<I<debhelper options>>] [B<-L>I<package>] [B<-l>I<directory>] [B<-X>I<item>] [S<B<--> I<params>>]
++B<dh_shlibdeps> [S<I<debhelper options>>] [B<-L>I<package>] [B<-l>I<directory>] [B<-X>I<item>] [B<-R>I<directory>] [S<B<--> I<params>>]
+ 
+ =head1 DESCRIPTION
+ 
+@@ -65,6 +65,15 @@
+ build directory for the specified package, when searching for libraries,
+ symbol files, and shlibs files.
+ 
++=item B<-R>I<directory>, B<--sysroot=>I<directory>
++
++This option tells B<dpkg-shlibdeps> to use an alternate directory as a
++system root.  It will be prepended to the B<--admindir> directory, and
++to library search paths.
++
++This is useful when cross-building packages against libraries in a
++system root directory created by e.g. B<multistrap>.
++
+ =back
+ 
+ =head1 EXAMPLES
+@@ -93,6 +102,7 @@
+ 	"L|libpackage=s" => \$dh{LIBPACKAGE},
+ 	"dpkg-shlibdeps-params=s", => \$dh{U_PARAMS},
+ 	"l=s", => \$dh{L_PARAMS},
++	"R|sysroot=s", => \$dh{SYSROOT},
+ });
+ 
+ if (defined $dh{V_FLAG}) {
+@@ -135,6 +145,7 @@
+ 		}
+ 		
+ 		push @opts, "-tudeb" if is_udeb($package);
++		push @opts, "--sysroot=$dh{SYSROOT}" if (defined $dh{SYSROOT});
+ 		
+ 		if ($dh{L_PARAMS}) {
+ 			foreach (split(/:/, $dh{L_PARAMS})) {
