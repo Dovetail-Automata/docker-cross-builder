@@ -62,6 +62,10 @@ RUN apt-get update && \
 ###################################################################
 # Install generic packages
 
+# Stop `dpkg-gencontrol` warnings about flock
+RUN apt-get -y install \
+        libfile-fcntllock-perl
+
 # Utilities
 RUN apt-get -y install \
 	locales \
