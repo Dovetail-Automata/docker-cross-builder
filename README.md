@@ -52,7 +52,7 @@ been tested.  Build results may have unpredicted results, and are
 
   - Build `armhf` binary packages
 
-		  SYSROOT=$ARM_ROOT dpkg-buildpackage -uc -us -a armhf -B -d
+		  DPKG_ROOT=$ARM_ROOT dpkg-buildpackage -uc -us -a armhf -B -d
 
 - Build Machinekit RIP
   - Init `autoconf` (as usual)
