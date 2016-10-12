@@ -152,8 +152,7 @@ RUN yes y | mk-build-deps -ir /tmp/debian/control
 # Create armhf deps package
 RUN mk-build-deps -a armhf /tmp/debian/control && \
     mv *.deb /tmp/debs && \
-    cd /tmp/debs && \
-    dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
+    dpkg-scanpackages -m /tmp/debs > /tmp/debs/Packages
 
 # Build armhf "sysroot"
 ENV ARM_ROOT=/sysroot/armhf
@@ -178,7 +177,7 @@ RUN for link in $(find $ARM_ROOT/usr/lib/${ARMHF_HOST_MULTIARCH}/ -type l); do \
 # RUN mk-build-deps -a i386 /tmp/debian/control && \
 #     mv *.deb /tmp/debs && \
 #     cd /tmp/debs && \
-#     dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
+#     dpkg-scanpackages -m /tmp/debs > /tmp/debs/Packages
 
 # # Build i386 "sysroot"
 # ENV I386_ROOT=/sysroot/i386
