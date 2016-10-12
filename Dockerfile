@@ -181,7 +181,7 @@ RUN for link in $(find $ARM_ROOT/usr/lib/${ARMHF_HOST_MULTIARCH}/ -type l); do \
 #     dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
 
 # # Build i386 "sysroot"
-# ENV I386_ROOT=/opt/rootfs/i386
+# ENV I386_ROOT=/sysroot/i386
 # ENV I386_HOST_MULTIARCH=i386-linux-gnu
 # RUN multistrap -f /tmp/jessie.conf -a i386 -d $I386_ROOT
 
