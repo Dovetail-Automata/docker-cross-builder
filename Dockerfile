@@ -104,13 +104,30 @@ RUN	apt-get install -y python-restkit rubygems
 RUN	gem install package_cloud --no-rdoc --no-ri
 ADD	PackagecloudIo.py prune.py /usr/bin/
 
-# Cross-build toolchain and qemulator
-# For some reason, apt-get chokes without explicit `linux-libc-dev:armhf`
+# Prepare armhf build root environment
+ENV ARM_ROOT=/sysroot/armhf
+ENV ARM_HOST_MULTIARCH=arm-linux-gnueabihf
+# - Install armhf cross-build toolchain and qemulator
+#   For some reason, apt-get chokes without explicit `linux-libc-dev:armhf`
 RUN apt-get -y install \
         crossbuild-essential-armhf \
         qemu-user-static \
-	linux-libc-dev:armhf
+        linux-libc-dev:armhf
+# - Symlink armhf-arch pkg-config
+RUN ln -s pkg-config /usr/bin/${ARMHF_HOST_MULTIARCH}-pkg-config
 
+# Prepare i386 build root environment
+ENV I386_ROOT=/sysroot/i386
+ENV I386_HOST_MULTIARCH=i386-linux-gnu
+# - Add multilib and cross-binutils tools
+RUN apt-get install -y \
+        binutils-i586-linux-gnu
+# - Symlink i586 binutils to i386 so ./configure can find them
+RUN for i in /usr/bin/i586-linux-gnu-*; do \
+        ln -s $(basename $i) ${i/i586/i386}; \
+    done
+# - Symlink i386-arch pkg-config
+RUN ln -s pkg-config /usr/bin/${I386_HOST_MULTIARCH}-pkg-config
 
 ###########################################
 # Monkey-patch:  add `{dh_shlibdeps,dpkg-shlibdeps} --sysroot` argument
@@ -124,8 +141,8 @@ RUN cd / && \
 ###################################################################
 # Install Machinekit dependency packages
 
-#########
-# Prepare to install deps for all arches
+##############################
+# Configure multistrap
 
 # Set up debian/control for `mk-build-deps`
 #     FIXME download parts from upstream
@@ -139,18 +156,14 @@ ADD jessie.conf /tmp/
 RUN mkdir /tmp/debs && \
     touch /tmp/debs/Sources
 
-# `run-configure` script
-ADD run-configure.sh /usr/local/bin/run-configure
 
-#########
-# Install deps for native arch
+##############################
+# Native arch build environment
 RUN yes y | mk-build-deps -ir /tmp/debian/control
+
 
 ##############################
 # armhf arch build environment
-
-ENV ARM_ROOT=/sysroot/armhf
-ENV ARM_HOST_MULTIARCH=arm-linux-gnueabihf
 
 # Create armhf deps package
 RUN mk-build-deps -a armhf /tmp/debian/control && \
@@ -168,16 +181,9 @@ RUN for link in $(find $ARM_ROOT/usr/lib/${ARM_HOST_MULTIARCH}/ -type l); do \
 	fi; \
     done
 
-# Prepare build root
-# - Symlink armhf-arch pkg-config
-RUN ln -s pkg-config /usr/bin/${ARMHF_HOST_MULTIARCH}-pkg-config
-
 
 ##############################
 # i386 arch build environment
-
-ENV I386_ROOT=/sysroot/i386
-ENV I386_HOST_MULTIARCH=i386-linux-gnu
 
 # Create i386 deps package
 RUN mk-build-deps -a i386 /tmp/debian/control && \
@@ -193,19 +199,6 @@ RUN for link in $(find $I386_ROOT/usr/lib/${I386_HOST_MULTIARCH}/ -type l); do \
 	    ln -sf ../../../lib/${I386_HOST_MULTIARCH}/$(basename \
 	        $(readlink $link)) $link; \
 	fi; \
-    done
-
-# Prepare build root
-# - Symlink i386-arch pkg-config
-RUN ln -s pkg-config /usr/bin/${I386_HOST_MULTIARCH}-pkg-config
-# - Add i386 cross-build tools
-RUN apt-get install -y \
-        gcc-multilib \
-        g++-multilib \
-        binutils-i586-linux-gnu
-# - Symlink i586 binutils to i386 so ./configure can find them
-RUN for i in /usr/bin/i586-linux-gnu-*; do \
-        ln -s $(basename $i) ${i/i586/i386}; \
     done
 
 
