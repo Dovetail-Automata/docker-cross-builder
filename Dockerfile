@@ -140,8 +140,10 @@ RUN cd / && \
     patch -p0 < /tmp/dpkg-shlibdeps.patch && \
     rm /tmp/dpkg-shlibdeps.patch
 # Help dpkg-shlibdeps find i386 libraries
-RUN ln -s ${I386_HOST_MULTIARCH} ${I386_ROOT}/usr/lib/i586-linux-gnu
-RUN cp /etc/ld.so.conf $I386_ROOT/etc/ld.so.conf
+RUN mkdir -p ${I386_ROOT}/usr/lib/ && \
+    ln -s ${I386_HOST_MULTIARCH} ${I386_ROOT}/usr/lib/i586-linux-gnu
+RUN mkdir -p $I386_ROOT/etc && \
+    cp /etc/ld.so.conf $I386_ROOT/etc/ld.so.conf
 
 
 ###################################################################
