@@ -168,7 +168,7 @@ RUN yes y | mk-build-deps -ir /tmp/debian/control
 # Create armhf deps package
 RUN mk-build-deps -a armhf /tmp/debian/control && \
     mv *.deb /tmp/debs && \
-    dpkg-scanpackages -m /tmp/debs > /tmp/debs/Packages
+    ( cd /tmp/debs && dpkg-scanpackages -m . > /tmp/debs/Packages )
 
 # Build armhf "sysroot"
 # - Select and unpack build dependency packages
@@ -188,7 +188,7 @@ RUN for link in $(find $ARM_ROOT/usr/lib/${ARM_HOST_MULTIARCH}/ -type l); do \
 # Create i386 deps package
 RUN mk-build-deps -a i386 /tmp/debian/control && \
     mv *.deb /tmp/debs && \
-    dpkg-scanpackages -m /tmp/debs > /tmp/debs/Packages
+    ( cd /tmp/debs && dpkg-scanpackages -m . > /tmp/debs/Packages )
 
 # Build i386 "sysroot"
 # - Select and unpack build dependency packages
