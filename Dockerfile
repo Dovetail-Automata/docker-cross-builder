@@ -147,7 +147,10 @@ ADD run-configure.sh /usr/local/bin/run-configure
 RUN yes y | mk-build-deps -ir /tmp/debian/control
 
 ##############################
-# Install armhf arch "sysroot"
+# armhf arch build environment
+
+ENV ARM_ROOT=/sysroot/armhf
+ENV ARM_HOST_MULTIARCH=arm-linux-gnueabihf
 
 # Create armhf deps package
 RUN mk-build-deps -a armhf /tmp/debian/control && \
@@ -155,44 +158,55 @@ RUN mk-build-deps -a armhf /tmp/debian/control && \
     dpkg-scanpackages -m /tmp/debs > /tmp/debs/Packages
 
 # Build armhf "sysroot"
-ENV ARM_ROOT=/sysroot/armhf
-ENV ARM_HOST_MULTIARCH=arm-linux-gnueabihf
+# - Select and unpack build dependency packages
 RUN multistrap -f /tmp/jessie.conf -a armhf -d $ARM_ROOT
-
-# armhf-arch pkg-config
-RUN ln -s pkg-config /usr/bin/${ARMHF_HOST_MULTIARCH}-pkg-config
-
-# Fix symlinks in "sysroot" libdir pointing to `/usr/lib`
-RUN for link in $(find $ARM_ROOT/usr/lib/${ARMHF_HOST_MULTIARCH}/ -type l); do \
+# - Fix symlinks in "sysroot" libdir pointing to `/lib/$MULTIARCH`
+RUN for link in $(find $ARM_ROOT/usr/lib/${ARM_HOST_MULTIARCH}/ -type l); do \
         if test $(dirname $(readlink $link)) != .; then \
-	    ln -sf $ARM_ROOT$(readlink $link) $link; \
+	    ln -sf ../../../lib/${ARM_HOST_MULTIARCH}/$(basename \
+	        $(readlink $link)) $link; \
 	fi; \
     done
 
-# FIXME i386 arch support broken
-# ##############################
-# # Install i386 arch "sysroot"
+# Prepare build root
+# - Symlink armhf-arch pkg-config
+RUN ln -s pkg-config /usr/bin/${ARMHF_HOST_MULTIARCH}-pkg-config
 
-# # Create i386 deps package
-# RUN mk-build-deps -a i386 /tmp/debian/control && \
-#     mv *.deb /tmp/debs && \
-#     cd /tmp/debs && \
-#     dpkg-scanpackages -m /tmp/debs > /tmp/debs/Packages
 
-# # Build i386 "sysroot"
-# ENV I386_ROOT=/sysroot/i386
-# ENV I386_HOST_MULTIARCH=i386-linux-gnu
-# RUN multistrap -f /tmp/jessie.conf -a i386 -d $I386_ROOT
+##############################
+# i386 arch build environment
 
-# # i386-arch pkg-config
-# RUN ln -s pkg-config /usr/bin/${I386_HOST_MULTIARCH}-pkg-config
+ENV I386_ROOT=/sysroot/i386
+ENV I386_HOST_MULTIARCH=i386-linux-gnu
 
-# # Fix symlinks in "sysroot" libdir pointing to `/usr/lib`
-# RUN for link in $(find $I386_ROOT/usr/lib/${I386_HOST_MULTIARCH}/ -type l); do \
-#         if test $(dirname $(readlink $link)) != .; then \
-# 	    ln -sf $I386_ROOT$(readlink $link) $link; \
-# 	fi; \
-#     done
+# Create i386 deps package
+RUN mk-build-deps -a i386 /tmp/debian/control && \
+    mv *.deb /tmp/debs && \
+    dpkg-scanpackages -m /tmp/debs > /tmp/debs/Packages
+
+# Build i386 "sysroot"
+# - Select and unpack build dependency packages
+RUN multistrap -f /tmp/jessie.conf -a i386 -d $I386_ROOT
+# - Fix symlinks in "sysroot" libdir pointing to `/lib/$MULTIARCH`
+RUN for link in $(find $I386_ROOT/usr/lib/${I386_HOST_MULTIARCH}/ -type l); do \
+        if test $(dirname $(readlink $link)) != .; then \
+	    ln -sf ../../../lib/${I386_HOST_MULTIARCH}/$(basename \
+	        $(readlink $link)) $link; \
+	fi; \
+    done
+
+# Prepare build root
+# - Symlink i386-arch pkg-config
+RUN ln -s pkg-config /usr/bin/${I386_HOST_MULTIARCH}-pkg-config
+# - Add i386 cross-build tools
+RUN apt-get install -y \
+        gcc-multilib \
+        g++-multilib \
+        binutils-i586-linux-gnu
+# - Symlink i586 binutils to i386 so ./configure can find them
+RUN for i in /usr/bin/i586-linux-gnu-*; do \
+        ln -s $(basename $i) ${i/i586/i386}; \
+    done
 
 
 ###########################################
