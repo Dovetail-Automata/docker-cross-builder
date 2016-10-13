@@ -60,8 +60,8 @@ been tested.  Build results may have unpredicted results, and are
   - Build `armhf` binary packages
 
           DPKG_ROOT=$ARM_ROOT \
-          LDFLAGS=--sysroot=$I386_ROOT \
-          CPPFLAGS=--sysroot=$I386_ROOT \
+          LDFLAGS=--sysroot=$ARM_ROOT \
+          CPPFLAGS=--sysroot=$ARM_ROOT \
           dpkg-buildpackage -uc -us -a armhf -B -d
 
 - Build Machinekit RIP
