@@ -124,7 +124,7 @@ RUN apt-get install -y \
         binutils-i586-linux-gnu
 # - Symlink i586 binutils to i386 so ./configure can find them
 RUN for i in /usr/bin/i586-linux-gnu-*; do \
-        ln -s $(basename $i) ${i/i586/i386}; \
+        ln -s $(basename $i) $(echo $i | sed 's/i586/i386/'); \
     done
 # - Symlink i386-arch pkg-config
 RUN ln -s pkg-config /usr/bin/${I386_HOST_MULTIARCH}-pkg-config
