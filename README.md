@@ -53,13 +53,15 @@ been tested.  Build results may have unpredicted results, and are
   - Build `i386` binary packages
 
           DPKG_ROOT=$I386_ROOT \
-          LDFLAGS=-m32 \
-          CPPFLAGS=-m32 \
+          LDFLAGS="-m32 --sysroot=$I386_ROOT" \
+          CPPFLAGS="-m32 --sysroot=$I386_ROOT" \
           dpkg-buildpackage -uc -us -a i386 -B -d
 
   - Build `armhf` binary packages
 
           DPKG_ROOT=$ARM_ROOT \
+          LDFLAGS=--sysroot=$I386_ROOT \
+          CPPFLAGS=--sysroot=$I386_ROOT \
           dpkg-buildpackage -uc -us -a armhf -B -d
 
 - Build Machinekit RIP
@@ -76,10 +78,7 @@ been tested.  Build results may have unpredicted results, and are
 
           CPPFLAGS="--sysroot=$I386_ROOT -m32"
           LDFLAGS="--sysroot=$I386_ROOT -m32" \
-          ./configure \
-              --host=$I386_HOST_MULTIARCH \
-              --with-tcl=$I386_ROOT/usr/lib/$I386_HOST_MULTIANCH/tcl8.6 \
-              --with-tk=$I386_ROOT/usr/lib/$I386_HOST_MULTIARCH/tk8.6
+          ./configure --host=$I386_HOST_MULTIARCH
 
           CPPFLAGS="--sysroot=$I386_ROOT -m32" \
           LDFLAGS="--sysroot=$I386_ROOT -m32" \
@@ -89,10 +88,7 @@ been tested.  Build results may have unpredicted results, and are
 
           CPPFLAGS=--sysroot=$ARM_ROOT \
           LDFLAGS=--sysroot=$ARM_ROOT \
-          ./configure \
-              --host=$ARM_HOST_MULTIARCH \
-              --with-tcl=$ARM_ROOT/usr/lib/$ARM_HOST_MULTIARCH/tcl8.6 \
-              --with-tk=$ARM_ROOT/usr/lib/$ARM_HOST_MULTIARCH/tk8.6
+          ./configure --host=$ARM_HOST_MULTIARCH
 
           CPPFLAGS=--sysroot=$ARM_ROOT \
           LDFLAGS=--sysroot=$ARM_ROOT \
