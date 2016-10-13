@@ -44,37 +44,64 @@ been tested.  Build results may have unpredicted results, and are
 - Build Machinekit packages
   - Prepare the source (as usual)
 
-		  debian/configure -prxt 8.6
+          debian/configure -prxt 8.6
 
   - Build `amd64` and architecture independent binary packages (as usual)
 
-		  dpkg-buildpackage -uc -us -b
+          dpkg-buildpackage -uc -us -b
+
+  - Build `i386` binary packages
+
+          DPKG_ROOT=$I386_ROOT \
+          LDFLAGS=-m32 \
+          CPPFLAGS=-m32 \
+          dpkg-buildpackage -uc -us -a i386 -B -d
 
   - Build `armhf` binary packages
 
-		  DPKG_ROOT=$ARM_ROOT dpkg-buildpackage -uc -us -a armhf -B -d
+          DPKG_ROOT=$ARM_ROOT \
+          dpkg-buildpackage -uc -us -a armhf -B -d
 
 - Build Machinekit RIP
   - Init `autoconf` (as usual)
 
-		  cd src && ./autogen.sh
+          cd src && ./autogen.sh
 
   - Configure and build for `amd64`
 
-		  ./configure && make
+          ./configure
+          make
+
+  - Configure and build for `i386`
+
+          CPPFLAGS="--sysroot=$I386_ROOT -m32"
+          LDFLAGS="--sysroot=$I386_ROOT -m32" \
+          ./configure \
+              --host=$I386_HOST_MULTIARCH \
+              --with-tcl=$I386_ROOT/usr/lib/$I386_HOST_MULTIANCH/tcl8.6 \
+              --with-tk=$I386_ROOT/usr/lib/$I386_HOST_MULTIARCH/tk8.6
+
+          CPPFLAGS="--sysroot=$I386_ROOT -m32" \
+          LDFLAGS="--sysroot=$I386_ROOT -m32" \
+          make -j4
 
   - Configure and build for `armhf`
 
-		  CPPFLAGS=--sysroot=$ARM_ROOT LDFLAGS=--sysroot=$ARM_ROOT \
-		  ./configure \
-			  --host=$ARM_HOST_MULTIARCH \
-			  --with-tcl=$ARM_ROOT/usr/lib/$ARM_HOST_MULTIARCH/tcl8.6 \
-			  --with-tk=$ARM_ROOT/usr/lib/$ARM_HOST_MULTIARCH/tk8.6 \
-		  CPPFLAGS=--sysroot=$ARM_ROOT LDFLAGS=--sysroot=$ARM_ROOT make
+          CPPFLAGS=--sysroot=$ARM_ROOT \
+          LDFLAGS=--sysroot=$ARM_ROOT \
+          ./configure \
+              --host=$ARM_HOST_MULTIARCH \
+              --with-tcl=$ARM_ROOT/usr/lib/$ARM_HOST_MULTIARCH/tcl8.6 \
+              --with-tk=$ARM_ROOT/usr/lib/$ARM_HOST_MULTIARCH/tk8.6
+
+          CPPFLAGS=--sysroot=$ARM_ROOT \
+          LDFLAGS=--sysroot=$ARM_ROOT \
+          make
+
 
   - Setuid (as usual)
 
-		  sudo make setuid
+          sudo make setuid
 
 ## How it works
 
