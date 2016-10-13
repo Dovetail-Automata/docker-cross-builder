@@ -1,8 +1,8 @@
 # Machinekit Builder v. 3
 
 This builds a Docker image containing `multistrap` system root trees
-for Debian Jessie `armhf` (and `i386` in the future) architecture,
-with tools in the native system to cross-build Machinekit.
+for Debian Jessie `armhf` and `i386` architectures, with tools in the
+native system to cross-build Machinekit.
 
 These containers are suitable for use either interactively on a
 workstation or in automated build environments like Travis CI.
@@ -128,13 +128,9 @@ versions are sufficient to break `Multi-Arch:` package installation.
   - Packages have not been tested.  Their viability must be determined
     before taking this project further.
 - Wheezy builds
-  - Using this method to build Wheezy packages is expected to be a
-    much greater challenge than Jessie, since `Multi-Arch:` support is
-    even less mature.
-- Other achitectures:  `i386` and native `amd64` builds
-  - Native builds should be trivial.
-  - This same method should be easily extended to build
-    `i386`-architecture packages.
-  - Raspberry Pi builds could be challenging, since package versions
-    between Raspbian and upstream Jessie may not match.  This method
-    may break down in that case.
+  - The Emdebian repo was compromised some time back, and Wheezy
+    cross-build tool chains were lost.  That may be a problem for
+    `armhf` architecture builds.
+- Other achitectures:
+  - Raspberry Pi builds should work the same way as `armhf`.  The tool
+    chain may be different for `armel`.
