@@ -119,9 +119,11 @@ RUN ln -s pkg-config /usr/bin/${ARMHF_HOST_MULTIARCH}-pkg-config
 # Prepare i386 build root environment
 ENV I386_ROOT=/sysroot/i386
 ENV I386_HOST_MULTIARCH=i386-linux-gnu
-# - Add multilib and cross-binutils tools
+# - Add cross-binutils and multilib tools
 RUN apt-get install -y \
-        binutils-i586-linux-gnu
+        binutils-i586-linux-gnu \
+        gcc-4.9-multilib \
+        g++-4.9-multilib
 # - Symlink i586 binutils to i386 so ./configure can find them
 RUN for i in /usr/bin/i586-linux-gnu-*; do \
         ln -s $(basename $i) $(echo $i | sed 's/i586/i386/'); \
@@ -180,6 +182,12 @@ RUN for link in $(find $ARM_ROOT/usr/lib/${ARM_HOST_MULTIARCH}/ -type l); do \
 	        $(readlink $link)) $link; \
 	fi; \
     done
+# - Link tcl/tk setup scripts
+RUN mkdir -p /usr/lib/${ARM_HOST_MULTIARCH} && \
+    ln -s $ARM_ROOT/usr/lib/${ARM_HOST_MULTIARCH}/tcl8.6 \
+        /usr/lib/${ARM_HOST_MULTIARCH} && \
+    ln -s $ARM_ROOT/usr/lib/${ARM_HOST_MULTIARCH}/tk8.6 \
+        /usr/lib/${ARM_HOST_MULTIARCH}
 
 
 ##############################
@@ -200,6 +208,12 @@ RUN for link in $(find $I386_ROOT/usr/lib/${I386_HOST_MULTIARCH}/ -type l); do \
 	        $(readlink $link)) $link; \
 	fi; \
     done
+# - Link tcl/tk setup scripts
+RUN mkdir -p /usr/lib/${I386_HOST_MULTIARCH} && \
+    ln -s $I386_ROOT/usr/lib/${I386_HOST_MULTIARCH}/tcl8.6 \
+        /usr/lib/${I386_HOST_MULTIARCH} && \
+    ln -s $I386_ROOT/usr/lib/${I386_HOST_MULTIARCH}/tk8.6 \
+        /usr/lib/${I386_HOST_MULTIARCH}
 
 
 ###########################################
