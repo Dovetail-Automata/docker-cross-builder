@@ -1,4 +1,4 @@
-commit 5b0b106dfbe859cab8126cbe7c44f7ea046f19c1
+commit 8aafcde18af191dbf9c6f26e00079f5c74aff967
 Author: John Morris <john@zultron.com>
 Date:   Wed Oct 12 09:58:07 2016 -0500
 
@@ -11,10 +11,10 @@ Date:   Wed Oct 12 09:58:07 2016 -0500
     https://lists.debian.org/debian-cross/2016/10/msg00005.html
     https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=804624
 
-diff --git a/Path.pm b/Path.pm
+diff --git /usr/share/perl5/Dpkg/Path.pm b/Path.pm
 index d6dda57..4e7e83c 100644
---- usr/share/perl5/Dpkg/Path.pm
-+++ usr/share/perl5/Dpkg/Path.pm
+--- /usr/share/perl5/Dpkg/Path.pm
++++ /usr/share/perl5/Dpkg/Path.pm
 @@ -229,10 +229,12 @@ Return the path of all available control files for the given package.
  
  =cut
@@ -31,10 +31,10 @@ index d6dda57..4e7e83c 100644
      push @exec, $filetype if defined $filetype;
      spawn(exec => \@exec, wait_child => 1, to_string => \$control_file);
      chomp($control_file);
-diff --git a/dpkg-shlibdeps b/dpkg-shlibdeps
-index 9149a09..4aba630 100755
---- usr/bin/dpkg-shlibdeps
-+++ usr/bin/dpkg-shlibdeps
+diff --git /usr/bin/dpkg-shlibdeps b/dpkg-shlibdeps
+index 9149a09..eb1df3d 100755
+--- /usr/bin/dpkg-shlibdeps
++++ /usr/bin/dpkg-shlibdeps
 @@ -56,7 +56,8 @@ my $i = 0; my %depstrength = map { $_ => $i++ } @depfields;
  
  textdomain('dpkg-dev');
@@ -71,7 +71,15 @@ index 9149a09..4aba630 100755
  my %dependencies;
  
  # Statictics on soname seen in the whole run (with multiple analysis of
-@@ -260,8 +264,12 @@ foreach my $file (keys %exec) {
+@@ -196,6 +200,7 @@ foreach my $file (keys %exec) {
+ 	    next;
+ 	}
+ 	$libfiles{$lib} = $soname;
++	$lib = $sysroot . $lib if $lib =~ /^\//;
+ 	my $reallib = realpath($lib);
+ 	if ($reallib ne $lib) {
+ 	    $altlibfiles{$reallib} = $soname;
+@@ -260,8 +265,12 @@ foreach my $file (keys %exec) {
  		    if $debug > 1;
  	    } else {
  		# No symbol file found, fall back to standard shlibs
@@ -86,7 +94,7 @@ index 9149a09..4aba630 100755
                  my $libobj = $objdump_cache{$lib};
                  my $id = $dumplibs_wo_symfile->add_object($libobj);
  		if (($id ne $soname) and ($id ne $lib)) {
-@@ -642,7 +650,7 @@ sub add_shlibs_dep {
+@@ -642,7 +651,7 @@ sub add_shlibs_dep {
  	# Fallback to other shlibs files but it shouldn't be necessary
  	push @shlibs, @pkg_shlibs;
      } else {
@@ -95,7 +103,7 @@ index 9149a09..4aba630 100755
  	push @shlibs, $control_file if defined $control_file;
      }
      push @shlibs, $shlibsdefault;
-@@ -729,9 +737,10 @@ sub find_symbols_file {
+@@ -729,9 +738,10 @@ sub find_symbols_file {
  	# Fallback to other symbols files but it shouldn't be necessary
  	push @files, @pkg_symbols;
      } else {
@@ -109,7 +117,7 @@ index 9149a09..4aba630 100755
  	push @files, $control_file if defined $control_file;
      }
  
-@@ -814,8 +823,13 @@ sub my_find_library {
+@@ -814,8 +824,13 @@ sub my_find_library {
  
      # Fallback in the root directory if we have not found what we were
      # looking for in the packages
@@ -125,7 +133,7 @@ index 9149a09..4aba630 100755
  
      return;
  }
-@@ -845,7 +859,7 @@ sub find_packages {
+@@ -845,7 +860,7 @@ sub find_packages {
  	open STDERR, '>', '/dev/null'
  	    or syserr(_g('cannot open file %s'), '/dev/null');
  	$ENV{LC_ALL} = 'C';

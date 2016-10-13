@@ -132,12 +132,16 @@ RUN for i in /usr/bin/i586-linux-gnu-*; do \
 RUN ln -s pkg-config /usr/bin/${I386_HOST_MULTIARCH}-pkg-config
 
 ###########################################
-# Monkey-patch:  add `{dh_shlibdeps,dpkg-shlibdeps} --sysroot` argument
+# Monkey-patches
 
+# Add `{dh_shlibdeps,dpkg-shlibdeps} --sysroot` argument
 ADD dpkg-shlibdeps.patch /tmp/
 RUN cd / && \
     patch -p0 < /tmp/dpkg-shlibdeps.patch && \
     rm /tmp/dpkg-shlibdeps.patch
+# Help dpkg-shlibdeps find i386 libraries
+RUN ln -s ${I386_HOST_MULTIARCH} ${I386_ROOT}/usr/lib/i586-linux-gnu
+RUN cp /etc/ld.so.conf $I386_ROOT/etc/ld.so.conf
 
 
 ###################################################################
