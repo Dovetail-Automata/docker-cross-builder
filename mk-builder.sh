@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-IMAGE=zultron/mk-builder-3
+IMAGE=zultron/mk-builder-3:jessie
 NAME=mk-builder
 
 # Build: If called with args `mk-builder build [...]`, then build the image
