@@ -106,6 +106,7 @@ ADD	PackagecloudIo.py prune.py /usr/bin/
 
 # Prepare armhf build root environment
 ENV ARM_ROOT=/sysroot/armhf
+ENV RPI_ROOT=/sysroot/rpi
 ENV ARM_HOST_MULTIARCH=arm-linux-gnueabihf
 # - Install armhf cross-build toolchain and qemulator
 #   For some reason, apt-get chokes without explicit `linux-libc-dev:armhf`
@@ -114,7 +115,7 @@ RUN apt-get -y install \
         qemu-user-static \
         linux-libc-dev:armhf
 # - Symlink armhf-arch pkg-config
-RUN ln -s pkg-config /usr/bin/${ARMHF_HOST_MULTIARCH}-pkg-config
+RUN ln -s pkg-config /usr/bin/${ARM_HOST_MULTIARCH}-pkg-config
 
 # Prepare i386 build root environment
 ENV I386_ROOT=/sysroot/i386
@@ -157,8 +158,9 @@ RUN mkdir -p $I386_ROOT/etc && \
 ADD debian/ /tmp/debian/
 RUN /tmp/debian/configure -prxt8.6
 
-# Add multistrap configuration
+# Add multistrap configurations
 ADD jessie.conf /tmp/
+ADD rpi.conf /tmp/
 
 # Directory for `mk-build-deps` apt repository
 RUN mkdir /tmp/debs && \
@@ -223,6 +225,29 @@ RUN mkdir -p /usr/lib/${I386_HOST_MULTIARCH} && \
         /usr/lib/${I386_HOST_MULTIARCH} && \
     ln -s $I386_ROOT/usr/lib/${I386_HOST_MULTIARCH}/tk8.6 \
         /usr/lib/${I386_HOST_MULTIARCH}
+
+
+##############################
+# Raspbian build environment
+
+# (Using armhf deps package)
+
+# Build rpi "sysroot"
+# - Select and unpack build dependency packages
+RUN multistrap -f /tmp/rpi.conf -a armhf -d $RPI_ROOT
+# - Fix symlinks in "sysroot" libdir pointing to `/lib/$MULTIARCH`
+RUN for link in $(find $RPI_ROOT/usr/lib/${ARM_HOST_MULTIARCH}/ -type l); do \
+        if test $(dirname $(readlink $link)) != .; then \
+            ln -sf ../../../lib/${ARM_HOST_MULTIARCH}/$(basename \
+                $(readlink $link)) $link; \
+        fi; \
+    done
+# # - Link tcl/tk setup scripts
+# RUN mkdir -p /usr/lib/${ARM_HOST_MULTIARCH} && \
+#     ln -s $RPI_ROOT/usr/lib/${ARM_HOST_MULTIARCH}/tcl8.6 \
+#         /usr/lib/${ARM_HOST_MULTIARCH} && \
+#     ln -s $RPI_ROOT/usr/lib/${ARM_HOST_MULTIARCH}/tk8.6 \
+#         /usr/lib/${ARM_HOST_MULTIARCH}
 
 
 ###########################################

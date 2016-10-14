@@ -64,10 +64,18 @@ been tested.  Build results may have unpredicted results, and are
           CPPFLAGS=--sysroot=$ARM_ROOT \
           dpkg-buildpackage -uc -us -a armhf -B -d
 
+  - Build Raspbian binary packages
+
+          DPKG_ROOT=$RPI_ROOT \
+          LDFLAGS=--sysroot=$RPI_ROOT \
+          CPPFLAGS=--sysroot=$RPI_ROOT \
+          dpkg-buildpackage -uc -us -a armhf -B -d
+
 - Build Machinekit RIP
   - Init `autoconf` (as usual)
 
-          cd src && ./autogen.sh
+          cd src
+          ./autogen.sh
 
   - Configure and build for `amd64`
 
@@ -94,6 +102,15 @@ been tested.  Build results may have unpredicted results, and are
           LDFLAGS=--sysroot=$ARM_ROOT \
           make
 
+  - Configure and build for Raspbian
+
+          CPPFLAGS=--sysroot=$RPI_ROOT \
+          LDFLAGS=--sysroot=$RPI_ROOT \
+          ./configure --host=$ARM_HOST_MULTIARCH
+
+          CPPFLAGS=--sysroot=$RPI_ROOT \
+          LDFLAGS=--sysroot=$RPI_ROOT \
+          make
 
   - Setuid (as usual)
 
