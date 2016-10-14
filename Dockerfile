@@ -82,7 +82,9 @@ RUN apt-get install -y \
 	ccache \
 	autoconf \
 	automake \
-	quilt
+	quilt \
+	psmisc \
+	pkg-config
 
 # Add packagecloud cli and prune utility
 RUN	apt-get install -y python-restkit rubygems
