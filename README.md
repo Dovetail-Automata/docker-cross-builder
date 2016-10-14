@@ -1,17 +1,18 @@
-# Machinekit Builder v. 3
+# Docker Cross-Builder
 
 This builds a Docker image containing `multistrap` system root trees
 for Debian Jessie `armhf` and `i386` architectures, with tools in the
-native system to cross-build Machinekit.
+native system to cross-build Debian packages.
+
+The container is meant to be built upon by other containers, adding
+build dependencies and sysroot tweaks.
 
 These containers are suitable for use either interactively on a
 workstation or in automated build environments like Travis CI.
 
-Right now, this build method is still under initial evaluation.  While
-the RIP build result will pass regression tests on a native ARM host,
-and while the Debian packages will build, most functionality has never
-been tested.  Build results may have unpredicted results, and are
-**only suited for testing in simulated development environments**.
+Right now, this build method is still under initial evaluation.  Build
+results may have unpredicted results, and are **only suited for
+testing in simulated development environments**.
 
 ## Using the builder
 
@@ -41,11 +42,8 @@ been tested.  Build results may have unpredicted results, and are
             cd $MK
             $MK_BUILDER/mk-builder.sh
 
-- Build Machinekit packages
+- Building packages
   - Prepare the source (as usual)
-
-          debian/configure -prxt 8.6
-
   - Build `amd64` and architecture independent binary packages (as usual)
 
           dpkg-buildpackage -uc -us -b
@@ -71,10 +69,9 @@ been tested.  Build results may have unpredicted results, and are
           CPPFLAGS=--sysroot=$RPI_ROOT \
           dpkg-buildpackage -uc -us -a armhf -B -d
 
-- Build Machinekit RIP
+- Build by hand
   - Init `autoconf` (as usual)
 
-          cd src
           ./autogen.sh
 
   - Configure and build for `amd64`
@@ -122,7 +119,7 @@ This `Dockerfile` bootstraps foreign-arch system roots (using
 `multiarch`) with needed host-architecture dependencies installed.  It
 makes a few adjustments to links and package build tools, and installs
 the Emdebian `armhf` cross-compile tool chain.  The commands above to
-cross-build Machinekit instruct the compilers, linkers and build tools
+cross-build packages instruct the compilers, linkers and build tools
 to look for architecture-specific headers, libraries and build
 configuration under the foreign-arch system root.
 
@@ -134,20 +131,3 @@ cannot be satisfied.  Even once `Multi-Arch:` works to build against
 Debian mainline package streams, someday, this method also enables
 building against e.g. a Raspbian system root, where lagging package
 versions are sufficient to break `Multi-Arch:` package installation.
-
-
-## TODO
-
-- Test build viability
-  - Currently, RIP builds are known to pass regression tests (the
-    built source tree must be copied to an ARM host with Machinekit
-    run-time dependencies installed to test).
-  - Packages have not been tested.  Their viability must be determined
-    before taking this project further.
-- Wheezy builds
-  - The Emdebian repo was compromised some time back, and Wheezy
-    cross-build tool chains were lost.  That may be a problem for
-    `armhf` architecture builds.
-- Other achitectures:
-  - Raspberry Pi builds should work the same way as `armhf`.  The tool
-    chain may be different for `armel`.

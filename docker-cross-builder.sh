@@ -1,10 +1,11 @@
 #!/bin/bash -e
 
-IMAGE=zultron/mk-builder-3:jessie
-NAME=mk-builder
+IMAGE=zultron/docker-cross-builder
+NAME=docker-cross-builder
 
-# Build: If called with args `mk-builder build [...]`, then build the image
-# instead of running it, and add arguments to the `docker build` command
+# Build: If called with args `docker-cross-builder build [...]`, then
+# build the image instead of running it, and add arguments to the
+# `docker build` command
 if test "$1" = "build"; then
     shift
     cd $(dirname $0)
