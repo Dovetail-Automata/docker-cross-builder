@@ -168,6 +168,9 @@ RUN mkdir /tmp/debs && \
 ##############################
 # Native arch build environment
 RUN yes y | mk-build-deps -ir /tmp/debian/control
+# Regression test deps
+RUN apt-get install -y \
+	netcat-openbsd
 
 
 ##############################
