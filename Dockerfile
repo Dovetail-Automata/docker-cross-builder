@@ -89,7 +89,8 @@ RUN apt-get install -y \
 # Add packagecloud cli and prune utility
 RUN	apt-get install -y python-restkit rubygems
 RUN	gem install package_cloud --no-rdoc --no-ri
-ADD	PackagecloudIo.py prune.py /usr/bin/
+ADD	prune.py /usr/bin/
+ADD	PackagecloudIo.py /usr/lib/python2.7
 
 # Prepare armhf build root environment
 ENV ARM_ROOT=/sysroot/armhf
