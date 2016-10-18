@@ -7,6 +7,8 @@ from restkit import Resource, BasicAuth
 from restkit import OAuthFilter, request
 from restkit import util
 import restkit.oauth2 as oauth
+import re
+from pprint import pprint
 
 try:
     import simplejson as json
@@ -54,6 +56,7 @@ class PCBase(Resource):
     def get_url(self, url):
         return json.loads(self.get(url).body_string())
 
+
 class RepoShowItem(PCBase):
 
     def __init__(self, mgr, obj_dict):
@@ -76,12 +79,37 @@ class RepoShowItem(PCBase):
             self.__dict__
 
 
-class Repo(PCBase):
+class PCBasePaginated(PCBase):
+    def get_url(self, url, **kwargs):
+        resource = self.get(url, **kwargs)
+        if resource.headers.has_key("Link"):
+            m = self.next_re.search(resource.headers["Link"])
+            if m is None:
+                next_page = None
+            else:
+                next_page = m.group(1)
+        else:
+            next_page = None
+        
+        return (json.loads(resource.body_string()), next_page)
+
+
+    def get_url_iter(self, url):
+        done = False
+        data, next_page = self.get_url(url)
+        while data:
+            yield data.pop(0)
+            if next_page and not data:
+                moredata, next_page = self.get_url(url, page=next_page)
+                data.extend(moredata)
+
+class Repo(PCBasePaginated):
 
     def __init__(self, mgr, obj_dict):
         self.__dict__.update(obj_dict)
         self.mgr = mgr
         self.api_url = "%s/api/v1/repos%s" % (mgr.api_url, self.path)
+        self.next_re = re.compile(r'<%s/[^<]*page=([0-9]+)>; rel="next"' % self.api_url)
         super(Repo, self).__init__(mgr.token)
 
     def index(self, ptype, distro=None, version=None):
@@ -92,7 +120,8 @@ class Repo(PCBase):
             else:
                 break
         uri += ".json"
-        return [ Package(self, p) for p in self.get_url(uri) ]
+        for p in self.get_url_iter(uri):
+            yield Package(self, p)
 
     def all(self):
         uri = 'packages.json'
