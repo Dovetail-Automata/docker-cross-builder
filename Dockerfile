@@ -87,7 +87,7 @@ RUN apt-get install -y \
 	pkg-config
 
 # Add packagecloud cli and prune utility
-RUN	apt-get install -y python-restkit rubygems
+RUN	apt-get install -y python-restkit python-apt rubygems
 RUN	gem install package_cloud --no-rdoc --no-ri
 ADD	prune.py /usr/bin/
 ADD	PackagecloudIo.py /usr/lib/python2.7
